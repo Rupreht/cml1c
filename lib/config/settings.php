@@ -92,6 +92,13 @@ return array(
         ),
         'group'        => 'Товары',
     ),
+        'product_url_and_sku'   => array(
+        'value'        => false,
+        'title'        => 'URL страниц товара',
+        'description'  => 'Усложняем кодировку URL (&lt;название товара&gt;-&lt;артикул&gt;) Включите если есть в&nbsp;базе одинаковые названия товаров. Опция влияет только на добавление нового товара.',
+        'control_type' => waHtmlControl::CHECKBOX,
+        'group'        => 'Товары',
+    ),
     'product_type'              => array(
         'value'            => 1,
         'title'            => 'Тип товаров по умолчанию',
@@ -175,5 +182,12 @@ return array(
         'description'      => 'Выберите склад Shop-Script для синхронизации остатков с 1С',
         'control_type'     => waHtmlControl::SELECT,
         'options_callback' => array('shopCml1cPlugin', 'controlStock'),
+    ),
+        'debug_log_from_1c'   => array(
+        'value'        => false,
+        'title'        => 'Запись обмена',
+        'description'  => 'Вкючить запись в&nbsp;файл данных обмена из&nbsp;1С. (Не&nbsp;забудьте выключить). Для просмотра данных установите &laquo;Логи&raquo; Используйте только для отладки.',
+        'control_type' => waHtmlControl::CHECKBOX,
+        'group'        => 'Отладка',
     ),
 );

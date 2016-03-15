@@ -479,7 +479,11 @@ class shopCml1cPluginBackendRunController extends waLongActionController
 
         if (!file_exists($this->data['filename'])) {
             throw new waException('XML file missed');
-        }
+        } elseif ($this->plugin()->getSettings('debug_log_from_1c')) {
+	       $tmpname = tempnam('wa-log/', 'openXml');
+	       unlink($tmpname);
+	       copy($this->data['filename'], $tmpname . '-importCatalog.xml');
+	   }
 
         libxml_use_internal_errors(true);
         libxml_clear_errors();
@@ -2644,7 +2648,12 @@ SQL;
 
             $target = 'new';
             $product->name = $update_fields['name'];
-            $product->url = shopHelper::transliterate($product->name);
+            if ($this->plugin()->getSettings('product_url_and_sku')) {
+                $product_url = $product->name."-".$skus[-1]['sku'];
+            } else {
+                $product_url = $product->name;
+            }
+            $product->url = shopHelper::transliterate($product_url);
 
             foreach ($update_fields as $field => $value) {
                 if (!empty($value)) {
