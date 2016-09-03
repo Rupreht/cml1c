@@ -2570,7 +2570,7 @@ SQL;
         $update_fields = array(
             'summary'     => null,
             'description' => null,
-            'name'        => self::field($element, 'Наименование'),
+            'name'        => trim(strstr(self::field($element, 'Наименование'), '#', true)),
             'tax_id'      => null,
             'type_id'     => null,
         );
