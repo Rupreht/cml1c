@@ -2567,10 +2567,12 @@ SQL;
             $this->data['map'][self::STAGE_PRODUCT] = array();
         }
 
-        $update_fields = array(
+	$str_name = self::field($element, 'Наименование');
+        (($n = mb_strstr($str_name, '#', true)) || ($n = $str_name));
+	$update_fields = array(
             'summary'     => null,
             'description' => null,
-            'name'        => trim(strstr(self::field($element, 'Наименование'), '#', true)),
+            'name'        => trim($n),
             'tax_id'      => null,
             'type_id'     => null,
         );
