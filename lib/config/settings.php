@@ -199,6 +199,13 @@ return array(
         ),
         'group'        => 'Товары',
     ),
+    'product_url_and_sku'   => array(
+        'value'        => false,
+        'title'        => 'URL страниц товара',
+        'description'  => 'Усложняем кодировку URL (&lt;название товара&gt;-&lt;артикул&gt;) Включите если есть в&nbsp;базе одинаковые названия товаров. Опция влияет только на добавление нового товара.',
+        'control_type' => waHtmlControl::CHECKBOX,
+        'group'        => 'Товары',
+    ),
     'product_type'              => array(
         'value'            => 1,
         'title'            => 'Тип товаров по умолчанию',
