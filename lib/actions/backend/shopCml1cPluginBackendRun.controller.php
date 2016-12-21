@@ -4783,11 +4783,13 @@ SQL;
         if (!isset($this->data['map'][self::STAGE_PRODUCT])) {
             $this->data['map'][self::STAGE_PRODUCT] = array();
         }
+        $str_name = self::field($element, 'Наименование');
+        (($n = mb_strstr($str_name, '#', true)) || ($n = $str_name));
 
         $update_fields = array(
             'summary'     => null,
             'description' => null,
-            'name'        => self::field($element, 'Наименование'),
+            'name'        => trim($n),
             'tax_id'      => null,
             'type_id'     => null,
         );
@@ -5000,7 +5002,12 @@ SQL;
 
             $target = 'new';
             $product->name = $update_fields['name'];
-            $product->url = shopHelper::transliterate($product->name);
+            if ($this->plugin()->getSettings('product_url_and_sku')) {
+                $product_url = $product->name."-".$skus[-1]['sku'];
+            } else {
+                $product_url = $product->name;
+            }
+            $product->url = shopHelper::transliterate($product_url);
 
             foreach ($update_fields as $field => $value) {
                 if (!empty($value)) {

@@ -335,4 +335,11 @@ HTML
 Связь складов выполняется после анализа файла CommerceML на странице <a href="?action=importexport#/cml1c/tab/manual/">ручного обмена</a>.',
         'control_type' => waHtmlControl::CHECKBOX,
     ),
+    'product_url_and_sku'       => array(
+        'value'        => false,
+        'title'        => 'URL страниц товара',
+        'description'  => 'Усложняем кодировку URL (&lt;название товара&gt;-&lt;артикул&gt;) Включите если есть в&nbsp;базе одинаковые названия товаров. Опция влияет только на добавление нового товара.',
+        'control_type' => waHtmlControl::CHECKBOX,
+        'group'        => 'Товары',
+    ),
 );
