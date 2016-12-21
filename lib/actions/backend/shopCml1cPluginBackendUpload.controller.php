@@ -15,7 +15,7 @@ class shopCml1cPluginBackendUploadController extends shopUploadController
         $files = array();
         if ($name = tempnam($path, 'cml1c')) {
             unlink($name);
-            $ext = pathinfo($original_name, PATHINFO_EXTENSION);
+            $ext = strtolower(pathinfo($original_name, PATHINFO_EXTENSION));
             if ($ext && preg_match('/^\w+$/', $ext)) {
                 $name .= '.'.$ext;
             }
@@ -25,6 +25,9 @@ class shopCml1cPluginBackendUploadController extends shopUploadController
                     if (!function_exists('zip_open')) {
                         throw new waException("Для чтения zip файлов требуется включения поддержки zip архивов со стороны PHP");
                     }
+                    if (!function_exists('iconv')) {
+                        throw new waException("Для чтения zip файлов требуется включения поддержки PHP расширения iconv");
+                    }
                     if (($zip = zip_open($name)) && is_resource($zip)) {
                         while ($entry = zip_read($zip)) {
                             $filename = zip_entry_name($entry);
@@ -32,8 +35,8 @@ class shopCml1cPluginBackendUploadController extends shopUploadController
 
                             if (strtolower(pathinfo($filename, PATHINFO_EXTENSION) == 'xml')) {
                                 $files[] = array(
-                                    'name'  => $filename,
-                                    'size'  => waFiles::formatSize(zip_entry_filesize($entry)),
+                                    'name' => $filename,
+                                    'size' => waFiles::formatSize(zip_entry_filesize($entry)),
                                 );
                             }
                         }

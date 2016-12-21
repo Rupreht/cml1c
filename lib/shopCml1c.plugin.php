@@ -7,13 +7,43 @@
  */
 class shopCml1cPlugin extends shopPlugin
 {
+    public function getControls($params = array())
+    {
+        waHtmlControl::registerControl('ContactFieldsControl', array($this, 'settingContactFieldsControl'));
+        return parent::getControls($params);
+    }
+
+    public function getConfigParam($param = null)
+    {
+        static $config = null;
+        if (is_null($config)) {
+            $app_config = wa('shop');
+            $files = array(
+                $app_config->getAppPath('plugins/cml1c', 'shop').'/lib/config/config.php', // defaults
+                $app_config->getConfigPath('shop/plugins/cml1c').'/config.php', // custom
+            );
+            $config = array();
+            foreach ($files as $file_path) {
+                if (file_exists($file_path)) {
+                    $config = include($file_path);
+                    if ($config && is_array($config)) {
+                        foreach ($config as $name => $value) {
+                            $config[$name] = $value;
+                        }
+                    }
+                }
+            }
+        }
+        return ($param === null) ? $config : (isset($config[$param]) ? $config[$param] : null);
+    }
+
     public function getCallbackUrl($absolute = true)
     {
         $routing = wa()->getRouting();
 
         $route_params = array(
             'plugin' => $this->id,
-            'hash'   => $this->uuid(), //š
+            'hash'   => $this->uuid(),
         );
         return preg_replace('@^https://@', 'http://', $routing->getUrl('shop/frontend/', $route_params, $absolute));
     }
@@ -228,7 +258,7 @@ class shopCml1cPlugin extends shopPlugin
             $result['sidebar_section'] = <<<HTML
     <div class="block">
         <span class="count"><a href="?action=importexport#/cml1c/tab/manual/"><i class="icon16 upload"></i></a></span>
-         <h5 class="heading">CML</h5>
+         <h5 class="heading">CommerceML выборка</h5>
         <ul class="menu-v with-icons">
 
             <li id="s-cml1c">
@@ -241,20 +271,20 @@ class shopCml1cPlugin extends shopPlugin
             <li id="s-cml1c-new">
                 <span class="count"></span>
                 <a href="#/products/hash=cml1c/new">
-                      <i class="icon16 folders"></i>Импортированные сегодня
+                      <i class="icon16 new"></i>Импортированные за 24 часа
                 </a>
             </li>
 
             <li id="s-cml1c-recent">
                 <span class="count"></span>
                 <a href="#/products/hash=cml1c/recent">
-                      <i class="icon16 folders"></i>Обновленные сегодня
+                      <i class="icon16 sync"></i>Обновленные за 24 часа
                 </a>
             </li>
             <li id="s-cml1c-no">
                 <span class="count"></span>
                 <a href="#/products/hash=cml1c/no">
-                    <i class="icon16 folders"></i>Без идентификатора
+                    <i class="icon16 no-bw"></i>Без идентификатора
                 </a>
             </li>
 
@@ -278,8 +308,7 @@ HTML;
          */
 
         $hash = $collection->getHash();
-        if (
-            ($hash[0] !== $this->id) ||
+        if (($hash[0] !== $this->id) ||
             (wa()->getEnv() != 'backend')
         ) {
             return null;
@@ -303,12 +332,12 @@ HTML;
         if (!empty($params['auto_title'])) {
             switch (ifset($hash[1])) {
                 case 'no':
-                    $collection->addTitle('Продукты без идентификатора CML');
+                    $collection->addTitle('Товары без идентификатора CML');
                     break;
                 case 'recent':
                     break;
                 default:
-                    $collection->addTitle('Продукты с идентификатором CML');
+                    $collection->addTitle('Товары с идентификатором CML');
                     break;
             }
 
@@ -325,29 +354,59 @@ HTML;
                 'value' => '',
                 'title' => '—',
             );
-            foreach (waContactFields::getAll() as $contact_field) {
-                if ($contact_field instanceof waContactCompositeField) {
-                    /**
-                     * @var waContactCompositeField $contact_field
-                     */
-                    foreach ($contact_field->getFields() as $contact_sub_field) {
-                        /**
-                         * @var waContactField $contact_sub_field
-                         */
+            if (false) {
+                $form = shopHelper::getCustomerForm();
+                foreach ($form->fields() as $field) {
+                    if ($field instanceof waContactCompositeField) {
+                        foreach ($field->getFields() as $sub_field) {
+                            if (!($sub_field instanceof waContactHiddenField)) {
+                                /**
+                                 * @var waContactField $sub_field
+                                 */
+                                $options[] = array(
+                                    'group' => $field->getName(),
+                                    'value' => $field->getId().':'.$sub_field->getId(),
+                                    'title' => $sub_field->getName(),
+                                );
+                            }
+                        }
+                    } elseif (!($field instanceof waContactHiddenField)) {
                         $options[] = array(
-                            'group' => $contact_field->getName(),
-                            'value' => $contact_field->getId().':'.$contact_sub_field->getId(),
-                            'title' => $contact_sub_field->getName(),
+                            'value' => $field->getId(),
+                            'title' => $field->getName(),
                         );
                     }
-                } else {
-                    /**
-                     * @var waContactField $contact_field
-                     */
-                    $options[] = array(
-                        'value' => $contact_field->getId(),
-                        'title' => $contact_field->getName(),
-                    );
+                }
+            } else {
+                foreach (waContactFields::getAll() as $contact_field) {
+                    if (!$contact_field instanceof waContactHiddenField) {
+                        if ($contact_field instanceof waContactCompositeField) {
+                            /**
+                             * @var waContactCompositeField $contact_field
+                             */
+                            foreach ($contact_field->getFields() as $contact_sub_field) {
+                                if (!$contact_sub_field instanceof waContactHiddenField) {
+                                    /**
+                                     * @var waContactField $contact_sub_field
+                                     */
+                                    $options[] = array(
+                                        'group' => $contact_field->getName(),
+                                        'value' => $contact_field->getId().':'.$contact_sub_field->getId(),
+                                        'title' => $contact_sub_field->getName(),
+                                    );
+                                }
+                            }
+                        } else {
+                            /**
+                             * @var waContactField $contact_field
+                             */
+                            $options[] = array(
+                                'group' => 'Общие поля',
+                                'value' => $contact_field->getId(),
+                                'title' => $contact_field->getName(),
+                            );
+                        }
+                    }
                 }
             }
         }
@@ -380,12 +439,85 @@ HTML;
         return $uuid;
     }
 
+    public function settingContactFieldsControl($name, $params = array())
+    {
+        $control = '';
+        $control .= <<<HTML
+<table class="zebra">
+<thead>
+<tr>
+<th>Поле контакта в Shop-Script</th>
+<th>Наименование реквизита в CommerceML</th>
+</tr></thead>
+<tbody>
+HTML;
+        $params = array_merge(
+            $params,
+            array(
+                'description'     => null,
+                'title_wrapper'   => false,
+                'title'           => null,
+                'control_wrapper' => "%s\n%s\n%s\n",
+            )
+        );
+        $options = $params['options'];
+        waHtmlControl::addNamespace($params, $name);
+        unset($params['options']);
+        $group = null;
+        foreach ($options as $option) {
+
+            $id = $option['value'];
+            if (!empty($id)) {
+                $line_params = $params;
+                $line_params['value'] = ifset($params['value'][$id], array());
+                waHtmlControl::addNamespace($line_params, $id);
+
+                #checkbox
+                $enabled_params = $line_params;
+                $enabled_params['value'] = ifset($line_params['value']['enabled']);
+                $enabled_params['label'] = $option['title'];
+                $enabled_params['description'] = $id;
+                $enabled = waHtmlControl::getControl(waHtmlControl::CHECKBOX, 'enabled', $enabled_params);
+
+                #name
+                $tag_params = $line_params;
+                $tag_params['value'] = ifset($line_params['value']['tag'], $option['title']);
+                $tag_params['placeholder'] = $option['title'];
+                $tag = waHtmlControl::getControl(waHtmlControl::INPUT, 'tag', $tag_params);
+
+                if (ifset($option['group']) != $group) {
+                    $group = $option['group'];
+                    $control .= <<<HTML
+<tr>
+    <td colspan="2"><h3>{$group}</h3></td>
+</tr>
+HTML;
+                }
+
+                $control .= <<<HTML
+<tr>
+    <td>{$enabled}</td>
+    <td>{$tag}</td>
+</tr>
+HTML;
+
+            }
+        }
+
+        $control .= <<<HTML
+</tbody>
+</table>
+HTML;
+        return $control;
+
+    }
+
     public static function controlStock()
     {
         static $options = null;
         if ($options === null) {
             $options = array();
-            $options[0] = 'Без учета складов';
+            $options[0] = 'Импорт в общие остатки товаров Shop-Script';
             $model = new shopStockModel();
             foreach ($model->getAll($model->getTableId()) as $id => $stock) {
                 $options[$id] = $stock['name'];
@@ -470,13 +602,18 @@ HTML;
                 'description' => '',
             ),
             array(
-                'value'       => 'tax',
+                'value'       => 'tax_id',
                 'title'       => _w('Tax type'),
                 'description' => '',
             ),
             array(
                 'value'       => 'features',
                 'title'       => _w('Features'),
+                'description' => '',
+            ),
+            array(
+                'value'       => 'params',
+                'title'       => _w('Custom parameters'),
                 'description' => '',
             ),
         );
@@ -491,5 +628,32 @@ HTML;
     {
         //14ed8b20-55bd-11d9-848a-00112f43529a
         return preg_match('@^[0-9a-f]{8}\-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$@', $string);
+    }
+
+    public function productHandler($product)
+    {
+        if (!empty($product['id_1c'])) {
+            $info_section = sprintf('<span class="hint" >1С GUID: %s</span>', $product['id_1c']);
+        }
+        return compact('info_section', 'title_suffix');
+    }
+
+    /**
+     * @param $event_params
+     * @param shopProduct $event_params ['product']
+     * @param array $event_params ['sku']
+     */
+    public function skuHandler($event_params)
+    {
+        if (!empty($event_params['sku']['id_1c'])) {
+            $template = <<<HTML
+<div class="field">
+<div class="name">1С GUID</div>
+<div class="value">%s#%s</div>
+</div>
+HTML;
+
+            return sprintf($template, $event_params['product']['id_1c'], $event_params['sku']['id_1c']);
+        }
     }
 }
